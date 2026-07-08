@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle for profile compatibility -->
+  <circle cx="50" cy="50" r="48" fill="#0E0E17" stroke="#1F1F2E" stroke-width="2" />
+  
+  <!-- Outer glowing shield/crest -->
+  <path d="M50 15 L78 26 V50 C78 68 66 84 50 88 C34 84 22 68 22 50 V26 L50 15 Z" fill="url(#crest-grad)" stroke="url(#stroke-grad)" stroke-width="2" />
+  
+  <!-- Stylized Indian Ashoka Pillar Capitols and steps (Clean Geometry) -->
+  <!-- Top dome/wheel emblem shape -->
+  <path d="M48 30 H52 V33 H48 Z" fill="#FFF" />
+  <circle cx="50" cy="36" r="3.5" stroke="#FFF" stroke-width="1.5" fill="none" />
+  <!-- Capital -->
+  <path d="M42 41 H58 V44 H42 Z" fill="#FFF" />
+  <path d="M44 45 L46 50 H54 L56 45 Z" fill="#E2DFFF" opacity="0.9" />
+  <!-- Pillars columns -->
+  <rect x="47" y="51" width="6" height="18" rx="1.5" fill="#FFF" />
+  <!-- Base steps -->
+  <path d="M41 70 H59 V72 H41 Z" fill="#E2DFFF" opacity="0.9" />
+  <path d="M37 73 H63 V76 H37 Z" fill="#FFF" />
+
+  <!-- Accent Tick Mark signifying smart resolutions -->
+  <path d="M43 60 L48 65 L57 52" stroke="#52C47B" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+
+  <defs>
+    <!-- Premium Royal Gradient -->
+    <linearGradient id="crest-grad" x1="50" y1="15" x2="50" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6B7FD7" />
+      <stop offset="100%" stop-color="#3B4CA0" />
+    </linearGradient>
+    <linearGradient id="stroke-grad" x1="50" y1="15" x2="50" y2="88" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFF" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#FFF" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+</svg>

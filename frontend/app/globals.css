@@ -1,0 +1,188 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #6B7FD7;
+  --primary-light: #8FA3F5;
+  --primary-dark: #4A5DB0;
+  --secondary: #52C47B;
+  --accent: #FFB347;
+  --danger: #FF6B6B;
+  
+  /* DEFAULT DARK MODE */
+  --bg: #0A0A10;
+  --surface: #12121E;
+  --surface2: #18182B;
+  --text-primary: #FFFFFF;
+  --text-secondary: #A1A1AA;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] {
+  --bg: #F0EEFF;
+  --surface: #FFFFFF;
+  --surface2: #F7F5FF;
+  --text-primary: #1A1A2E;
+  --text-secondary: #4A4A6A;
+  --border: #E2DFFF;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  min-height: 100dvh;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg);
+  color: var(--text-primary);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--surface2);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Overdue badge pulse animation */
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.03); }
+}
+
+.animate-pulse-soft {
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+
+/* Safe area for mobile */
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Glass card effect */
+.glass-card {
+  background: var(--surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Fix: Force form elements to use theme colors, not browser default white */
+input,
+textarea,
+select {
+  background-color: var(--surface2) !important;
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary) !important;
+  opacity: 1;
+}
+
+/* Fix autofill background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface2) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Premium Ambient Glowing Background Animations */
+@keyframes floatGlow1 {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+    opacity: 0.15;
+  }
+  33% {
+    transform: translate(-42%, -48%) scale(1.15) rotate(120deg);
+    opacity: 0.22;
+  }
+  66% {
+    transform: translate(-55%, -52%) scale(0.9) rotate(240deg);
+    opacity: 0.12;
+  }
+}
+
+@keyframes floatGlow2 {
+  0%, 100% {
+    transform: translate(50%, 50%) scale(1) rotate(0deg);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translate(45%, 55%) scale(1.25) rotate(-180deg);
+    opacity: 0.15;
+  }
+}
+
+@keyframes floatGlow3 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.05;
+  }
+  50% {
+    transform: translate(15px, -20px) scale(1.15);
+    opacity: 0.1;
+  }
+}
+
+.animate-glow-1 {
+  animation: floatGlow1 20s ease-in-out infinite;
+}
+
+.animate-glow-2 {
+  animation: floatGlow2 25s ease-in-out infinite;
+}
+
+.animate-glow-3 {
+  animation: floatGlow3 15s ease-in-out infinite;
+}
+
+/* Conic Light Rays Rotation Animation */
+@keyframes rotateRays {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+.animate-rays {
+  animation: rotateRays 90s linear infinite;
+}
+
+
