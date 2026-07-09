@@ -7,12 +7,8 @@ const logger = require('../utils/logger');
 
 const router = express.Router();
 
-// Redirect to Google OAuth (Request offline access & gmail send scope for sending emails on citizen's behalf)
-router.get('/google', passport.authenticate('google', { 
-  scope: ['profile', 'email', 'https://www.googleapis.com/auth/gmail.send'],
-  accessType: 'offline',
-  prompt: 'consent' // Forces Google to provide a refresh token every time they log in
-}));
+// Redirect to Google OAuth (Simple login, no email sending permission asked)
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 // Google OAuth callback
 router.get('/google/callback',
