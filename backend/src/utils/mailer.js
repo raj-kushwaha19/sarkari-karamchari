@@ -1,65 +1,65 @@
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
+// CRITICAL: Force IPv4 globally. Node 18+ defaults to IPv6 which Render blocks outbound.
+require('dns').setDefaultResultOrder('ipv4first');
 const logger = require('./logger');
 const User = require('../models/User');
 
-// Resend API-based email (works via HTTPS port 443, never blocked by Render)
-const getResendClient = () => {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) return null;
-  return new Resend(apiKey);
-};
+// Platform central transporter — sends on behalf of any citizen
+const createCentralTransporter = () => nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  family: 4, // Force IPv4 socket — prevents ENETUNREACH on Render
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+  tls: { rejectUnauthorized: false },
+});
 
 const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, complaintCode) => {
   try {
-    const centralEmail = process.env.GMAIL_USER || 'sarkari.karamchari.official@gmail.com';
+    const centralEmail = process.env.GMAIL_USER;
+
+    if (!centralEmail || !process.env.GMAIL_APP_PASSWORD) {
+      logger.error('[Mailer] GMAIL_USER or GMAIL_APP_PASSWORD missing in environment!');
+      return { error: 'Central email credentials not configured' };
+    }
+
     const centralUserBase = centralEmail.split('@')[0];
 
-    // Create tracking email (plus-addressing)
+    // Plus-addressing for complaint tracking
     const trackingEmail = complaintCode ? `${centralUserBase}+${complaintCode}@gmail.com` : null;
 
-    // Form Reply-To header
-    let replyToHeader = replyToEmail;
+    // Reply-To: citizen email + tracking address
+    let replyToHeader = replyToEmail || centralEmail;
     if (replyToEmail && trackingEmail) {
       replyToHeader = `${replyToEmail}, ${trackingEmail}`;
     } else if (trackingEmail) {
       replyToHeader = trackingEmail;
     }
 
-    // ── PRIMARY: Resend API (HTTPS, never blocked by Render) ──
-    const resend = getResendClient();
-    if (resend) {
-      logger.info(`[Mailer] Using Resend API to send email to ${toEmail}`);
+    // ── SEND: From sarkari.karamchari.official on behalf of citizen ──
+    const transporter = createCentralTransporter();
 
-      // Resend free tier requires sending from their domain unless you verify your own
-      // We use onboarding@resend.dev as sender on free tier
-      // If user verifies their domain, use: `"Sarkari Karamchari Platform" <noreply@yourdomain.com>`
-      const senderName = 'Sarkari Karamchari Platform';
-      // Try user's verified domain first, fallback to Resend's free domain
-      const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    // Verify SMTP connection first
+    await transporter.verify();
+    logger.info(`[Mailer] SMTP connection verified. Sending to ${toEmail}...`);
 
-      const result = await resend.emails.send({
-        from: `${senderName} <${fromAddress}>`,
-        to: [toEmail],
-        reply_to: replyToHeader || centralEmail,
-        subject: subject,
-        text: textContent,
-      });
+    const mailOptions = {
+      from: `"Sarkari Karamchari Platform" <${centralEmail}>`,
+      to: toEmail,
+      replyTo: replyToHeader,
+      subject: subject,
+      text: textContent,
+    };
 
-      if (result.error) {
-        logger.error(`[Mailer] Resend API error: ${JSON.stringify(result.error)}`);
-        return { error: result.error.message || 'Resend API failed' };
-      }
-
-      logger.info(`[Mailer] ✅ Resend Email sent successfully TO ${toEmail}. ID: ${result.data?.id}`);
-      return true;
-    }
-
-    // ── FALLBACK: No email service configured ──
-    logger.warn(`[Mailer] No email service configured. RESEND_API_KEY missing.`);
-    return { error: 'No email service configured. Please set RESEND_API_KEY in Render environment variables.' };
+    const info = await transporter.sendMail(mailOptions);
+    logger.info(`[Mailer] ✅ Email sent FROM ${centralEmail} TO ${toEmail}. MessageID: ${info.messageId}`);
+    return true;
 
   } catch (error) {
-    logger.error(`[Mailer] Email dispatch failed to ${toEmail}:`, error.message);
+    logger.error(`[Mailer] ❌ Email failed to ${toEmail}: ${error.message}`);
     return { error: error.message };
   }
 };
