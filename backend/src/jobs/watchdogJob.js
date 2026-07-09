@@ -299,7 +299,7 @@ Complaint Details:
 - Pincode: ${complaint.location.pinCode}
 - Complaint ID: ${complaint._id}
 
-You can view the full status and timeline at: http://localhost:3000/complaint/${complaint._id}
+You can view the full status and timeline at: ${process.env.FRONTEND_URL || 'https://sarkari-karamchari.vercel.app'}/complaint/${complaint._id}
 
 Regards,
 Sarkari Karamchari AI System`

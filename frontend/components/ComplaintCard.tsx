@@ -37,7 +37,7 @@ export default function ComplaintCard({ complaint, index }: { complaint: Complai
   const overdue = isOverdue(complaint);
   const handleAction = async (action: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/complaints/${complaint._id}/action`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://sarkari-karamchari.onrender.com/api'}/complaints/${complaint._id}/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

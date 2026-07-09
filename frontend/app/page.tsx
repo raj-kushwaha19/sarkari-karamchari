@@ -224,7 +224,7 @@ function LandingContent() {
                   {/* Premium Google Button */}
                   <motion.a
                     id="google-login-btn"
-                    href="/api/auth/google"
+                    href="https://sarkari-karamchari.onrender.com/api/auth/google"
                     whileHover={acceptedTerms ? { scale: 1.02 } : {}}
                     whileTap={acceptedTerms ? { scale: 0.98 } : {}}
                     className={`flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-bold rounded-xl py-4 px-6 text-sm shadow-lg shadow-black/20 transition-all w-full min-h-[52px] ${

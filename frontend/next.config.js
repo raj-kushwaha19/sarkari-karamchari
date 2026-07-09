@@ -7,8 +7,8 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    // Development: localhost:5000 | Production: Railway URL (set BACKEND_URL in Vercel env vars)
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    // Development: localhost:5000 | Production: Render URL (set BACKEND_URL in Vercel env vars)
+    const backendUrl = process.env.BACKEND_URL || 'https://sarkari-karamchari.onrender.com';
     return [
       { source: '/api/:path*', destination: `${backendUrl}/api/:path*` },
     ];
