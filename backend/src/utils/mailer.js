@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+require('dns').setDefaultResultOrder('ipv4first'); // Force IPv4 to bypass Render IPv6 block
 const logger = require('./logger');
 const User = require('../models/User');
 

@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('dns').setDefaultResultOrder('ipv4first'); // FORCE IPv4 GLOBALLY
 const app = require('./app');
 const connectDB = require('./config/db');
 const logger = require('./utils/logger');
