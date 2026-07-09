@@ -83,11 +83,15 @@ router.post('/', validate(complaintSchema), async (req, res) => {
     const targetEmail = sanitized.officialEmail || 'test@sarkar.com';
 
     // Send email asynchronously without blocking the HTTP response
-    sendComplaintEmail(targetEmail, emailSubject, emailBody, user.email, complaint.complaintCode).then(success => {
-      if (success) {
+    sendComplaintEmail(targetEmail, emailSubject, emailBody, user.email, complaint.complaintCode).then(result => {
+      if (result === true) {
         // Automatically update timeline to show it was sent
         complaint.status = 'department_received';
         complaint.timeline.push({ stage: 'department_received', timestamp: new Date(), note: 'AI successfully forwarded complaint to ' + targetEmail });
+        complaint.save().catch(e => logger.error(`[Complaints] Async save error for ${complaint._id}:`, e));
+      } else {
+        // Log the exact error to the timeline so we can see why it failed
+        complaint.timeline.push({ stage: 'submitted', timestamp: new Date(), note: `⚠️ System Error: Email dispatch failed. Reason: ${result.error || 'Unknown error'}. Retrying later.` });
         complaint.save().catch(e => logger.error(`[Complaints] Async save error for ${complaint._id}:`, e));
       }
     });

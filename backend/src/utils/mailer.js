@@ -66,7 +66,7 @@ const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, c
     // ── FALLBACK DISPATCH: Send from central platform account ──
     if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
       logger.warn(`[Mailer] [SIMULATION] Central credentials missing. Simulated dispatch to ${toEmail}`);
-      return true;
+      return { error: 'Central credentials missing' };
     }
 
     logger.info(`[Mailer] Sending from Central SMTP (${centralEmail}) on behalf of ${replyToEmail || 'citizen'}`);
@@ -84,9 +84,9 @@ const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, c
 
   } catch (error) {
     logger.error(`[Mailer] Email dispatch failed to ${toEmail}:`, error.message);
-    logger.warn(`[Mailer] [SIMULATION] Falling back to simulated success for demo purposes.`);
-    return true; // Return true so demo timeline progression is not blocked
+    return { error: error.message }; 
   }
 };
+
 
 module.exports = { sendComplaintEmail };
