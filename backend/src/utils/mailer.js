@@ -7,6 +7,7 @@ const centralTransporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465, // Explicitly use 465 (Secure) as port 587 is often blocked by Render
   secure: true,
+  family: 4, // Force IPv4. Render often fails on IPv6 (ENETUNREACH) to Google SMTP
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD,
