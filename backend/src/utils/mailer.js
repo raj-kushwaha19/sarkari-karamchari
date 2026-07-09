@@ -1,29 +1,23 @@
-const nodemailer = require('nodemailer');
-require('dns').setDefaultResultOrder('ipv4first'); // Force IPv4 to bypass Render IPv6 block
+const { Resend } = require('resend');
 const logger = require('./logger');
 const User = require('../models/User');
 
-// Platform central transporter (used as fallback)
-const centralTransporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465, // Explicitly use 465 (Secure) as port 587 is often blocked by Render
-  secure: true,
-  family: 4, // Force IPv4. Render often fails on IPv6 (ENETUNREACH) to Google SMTP
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+// Resend API-based email (works via HTTPS port 443, never blocked by Render)
+const getResendClient = () => {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+};
 
 const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, complaintCode) => {
   try {
     const centralEmail = process.env.GMAIL_USER || 'sarkari.karamchari.official@gmail.com';
     const centralUserBase = centralEmail.split('@')[0];
-    
-    // Create tracking email (plus-addressing: e.g. sarkari.karamchari.official+WRVP-SMJ3-2NBK-VV5L@gmail.com)
+
+    // Create tracking email (plus-addressing)
     const trackingEmail = complaintCode ? `${centralUserBase}+${complaintCode}@gmail.com` : null;
-    
-    // Form Reply-To header: includes citizen's email and the platform tracking email
+
+    // Form Reply-To header
     let replyToHeader = replyToEmail;
     if (replyToEmail && trackingEmail) {
       replyToHeader = `${replyToEmail}, ${trackingEmail}`;
@@ -31,66 +25,43 @@ const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, c
       replyToHeader = trackingEmail;
     }
 
-    // ── OAUTH2 DISPATCH: Try to send from the Citizen's own Gmail account ──
-    if (replyToEmail) {
-      const citizen = await User.findOne({ email: replyToEmail }).select('+gmailRefreshToken');
-      if (citizen && citizen.gmailRefreshToken) {
-        try {
-          logger.info(`[Mailer] Attempting OAuth2 dispatch directly from citizen email: ${replyToEmail}`);
-          
-          const oauthTransporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              type: 'OAuth2',
-              user: replyToEmail,
-              clientId: process.env.GOOGLE_CLIENT_ID,
-              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-              refreshToken: citizen.gmailRefreshToken,
-            },
-          });
+    // ── PRIMARY: Resend API (HTTPS, never blocked by Render) ──
+    const resend = getResendClient();
+    if (resend) {
+      logger.info(`[Mailer] Using Resend API to send email to ${toEmail}`);
 
-          const mailOptions = {
-            from: `"${citizen.name}" <${replyToEmail}>`,
-            to: toEmail,
-            replyTo: replyToHeader,
-            subject: subject,
-            text: textContent,
-          };
+      // Resend free tier requires sending from their domain unless you verify your own
+      // We use onboarding@resend.dev as sender on free tier
+      // If user verifies their domain, use: `"Sarkari Karamchari Platform" <noreply@yourdomain.com>`
+      const senderName = 'Sarkari Karamchari Platform';
+      // Try user's verified domain first, fallback to Resend's free domain
+      const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
-          const info = await oauthTransporter.sendMail(mailOptions);
-          logger.info(`[Mailer] ✅ OAuth2 Email sent successfully FROM citizen ${replyToEmail} TO ${toEmail}: ${info.messageId}`);
-          return true;
-        } catch (oauthError) {
-          logger.warn(`[Mailer] OAuth2 dispatch failed for ${replyToEmail}, falling back to central account. Error: ${oauthError.message}`);
-          // Do not return here; let it fall through to the central dispatch fallback below
-        }
+      const result = await resend.emails.send({
+        from: `${senderName} <${fromAddress}>`,
+        to: [toEmail],
+        reply_to: replyToHeader || centralEmail,
+        subject: subject,
+        text: textContent,
+      });
+
+      if (result.error) {
+        logger.error(`[Mailer] Resend API error: ${JSON.stringify(result.error)}`);
+        return { error: result.error.message || 'Resend API failed' };
       }
+
+      logger.info(`[Mailer] ✅ Resend Email sent successfully TO ${toEmail}. ID: ${result.data?.id}`);
+      return true;
     }
 
-    // ── FALLBACK DISPATCH: Send from central platform account ──
-    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-      logger.warn(`[Mailer] [SIMULATION] Central credentials missing. Simulated dispatch to ${toEmail}`);
-      return { error: 'Central credentials missing' };
-    }
-
-    logger.info(`[Mailer] Sending from Central SMTP (${centralEmail}) on behalf of ${replyToEmail || 'citizen'}`);
-    const mailOptions = {
-      from: `"Sarkari Karamchari Platform" <${centralEmail}>`,
-      to: toEmail,
-      replyTo: replyToHeader || centralEmail,
-      subject: subject,
-      text: textContent,
-    };
-
-    const info = await centralTransporter.sendMail(mailOptions);
-    logger.info(`[Mailer] ✅ Central Email sent successfully TO ${toEmail}: ${info.messageId}`);
-    return true;
+    // ── FALLBACK: No email service configured ──
+    logger.warn(`[Mailer] No email service configured. RESEND_API_KEY missing.`);
+    return { error: 'No email service configured. Please set RESEND_API_KEY in Render environment variables.' };
 
   } catch (error) {
     logger.error(`[Mailer] Email dispatch failed to ${toEmail}:`, error.message);
-    return { error: error.message }; 
+    return { error: error.message };
   }
 };
-
 
 module.exports = { sendComplaintEmail };
