@@ -31,30 +31,35 @@ const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, c
     if (replyToEmail) {
       const citizen = await User.findOne({ email: replyToEmail }).select('+gmailRefreshToken');
       if (citizen && citizen.gmailRefreshToken) {
-        logger.info(`[Mailer] Attempting OAuth2 dispatch directly from citizen email: ${replyToEmail}`);
-        
-        const oauthTransporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            type: 'OAuth2',
-            user: replyToEmail,
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            refreshToken: citizen.gmailRefreshToken,
-          },
-        });
+        try {
+          logger.info(`[Mailer] Attempting OAuth2 dispatch directly from citizen email: ${replyToEmail}`);
+          
+          const oauthTransporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+              type: 'OAuth2',
+              user: replyToEmail,
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              refreshToken: citizen.gmailRefreshToken,
+            },
+          });
 
-        const mailOptions = {
-          from: `"${citizen.name}" <${replyToEmail}>`,
-          to: toEmail,
-          replyTo: replyToHeader,
-          subject: subject,
-          text: textContent,
-        };
+          const mailOptions = {
+            from: `"${citizen.name}" <${replyToEmail}>`,
+            to: toEmail,
+            replyTo: replyToHeader,
+            subject: subject,
+            text: textContent,
+          };
 
-        const info = await oauthTransporter.sendMail(mailOptions);
-        logger.info(`[Mailer] ✅ OAuth2 Email sent successfully FROM citizen ${replyToEmail} TO ${toEmail}: ${info.messageId}`);
-        return true;
+          const info = await oauthTransporter.sendMail(mailOptions);
+          logger.info(`[Mailer] ✅ OAuth2 Email sent successfully FROM citizen ${replyToEmail} TO ${toEmail}: ${info.messageId}`);
+          return true;
+        } catch (oauthError) {
+          logger.warn(`[Mailer] OAuth2 dispatch failed for ${replyToEmail}, falling back to central account. Error: ${oauthError.message}`);
+          // Do not return here; let it fall through to the central dispatch fallback below
+        }
       }
     }
 
