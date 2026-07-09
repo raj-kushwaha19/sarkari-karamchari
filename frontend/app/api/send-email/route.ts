@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 export async function POST(req: Request) {
   try {
@@ -25,11 +26,11 @@ export async function POST(req: Request) {
       secure: true,
       family: 4,
       auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
+        user: process.env.GMAIL_USER as string,
+        pass: process.env.GMAIL_APP_PASSWORD as string,
       },
       tls: { rejectUnauthorized: false },
-    });
+    } as SMTPTransport.Options);
 
     await transporter.verify();
 
