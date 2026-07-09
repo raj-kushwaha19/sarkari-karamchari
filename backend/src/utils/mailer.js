@@ -1,65 +1,44 @@
-const nodemailer = require('nodemailer');
-// CRITICAL: Force IPv4 globally. Node 18+ defaults to IPv6 which Render blocks outbound.
-require('dns').setDefaultResultOrder('ipv4first');
 const logger = require('./logger');
-const User = require('../models/User');
 
-// Platform central transporter — sends on behalf of any citizen
-const createCentralTransporter = () => nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  family: 4, // Force IPv4 socket — prevents ENETUNREACH on Render
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-  tls: { rejectUnauthorized: false },
-});
-
+/**
+ * Proxy Mailer (Bypasses Render SMTP Block)
+ * Sends the email request to our Next.js frontend (Vercel) which fully supports outbound SMTP.
+ * No OAuth setup required, purely uses the App Password in Vercel's environment.
+ */
 const sendComplaintEmail = async (toEmail, subject, textContent, replyToEmail, complaintCode) => {
   try {
-    const centralEmail = process.env.GMAIL_USER;
+    // Determine the frontend URL to send the API request to
+    // In production, this should be the Vercel app URL.
+    const frontendUrl = process.env.FRONTEND_URL || 'https://sarkari-karamchari.vercel.app';
+    
+    logger.info(`[Mailer] Proxying email request to Vercel API at ${frontendUrl}`);
 
-    if (!centralEmail || !process.env.GMAIL_APP_PASSWORD) {
-      logger.error('[Mailer] GMAIL_USER or GMAIL_APP_PASSWORD missing in environment!');
-      return { error: 'Central email credentials not configured' };
+    const response = await fetch(`${frontendUrl}/api/send-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        toEmail,
+        subject,
+        textContent,
+        replyToEmail,
+        complaintCode
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      logger.error(`[Mailer] Vercel API failed to send email: ${data.error}`);
+      return { error: data.error || 'Vercel API failed to send email' };
     }
 
-    const centralUserBase = centralEmail.split('@')[0];
-
-    // Plus-addressing for complaint tracking
-    const trackingEmail = complaintCode ? `${centralUserBase}+${complaintCode}@gmail.com` : null;
-
-    // Reply-To: citizen email + tracking address
-    let replyToHeader = replyToEmail || centralEmail;
-    if (replyToEmail && trackingEmail) {
-      replyToHeader = `${replyToEmail}, ${trackingEmail}`;
-    } else if (trackingEmail) {
-      replyToHeader = trackingEmail;
-    }
-
-    // ── SEND: From sarkari.karamchari.official on behalf of citizen ──
-    const transporter = createCentralTransporter();
-
-    // Verify SMTP connection first
-    await transporter.verify();
-    logger.info(`[Mailer] SMTP connection verified. Sending to ${toEmail}...`);
-
-    const mailOptions = {
-      from: `"Sarkari Karamchari Platform" <${centralEmail}>`,
-      to: toEmail,
-      replyTo: replyToHeader,
-      subject: subject,
-      text: textContent,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    logger.info(`[Mailer] ✅ Email sent FROM ${centralEmail} TO ${toEmail}. MessageID: ${info.messageId}`);
+    logger.info(`[Mailer] ✅ Email successfully proxied via Vercel TO ${toEmail}. MessageID: ${data.messageId}`);
     return true;
 
   } catch (error) {
-    logger.error(`[Mailer] ❌ Email failed to ${toEmail}: ${error.message}`);
+    logger.error(`[Mailer] ❌ Vercel Proxy Email failed to ${toEmail}: ${error.message}`);
     return { error: error.message };
   }
 };
