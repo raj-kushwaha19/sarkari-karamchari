@@ -7,7 +7,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const passport = require('./config/passport');
-const { globalLimiter, strictLimiter } = require('./middleware/rateLimiter');
+const { globalLimiter, authLimiter, strictLimiter } = require('./middleware/rateLimiter');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
 
@@ -65,7 +65,7 @@ app.use(globalLimiter);
 app.use(passport.initialize());
 
 // Routes with strict limiting on sensitive endpoints
-app.use('/api/auth', strictLimiter, authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/representatives', representativeRoutes);
