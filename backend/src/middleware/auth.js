@@ -1,7 +1,16 @@
 const jwt = require('jsonwebtoken');
 
 const verifyJWT = (req, res, next) => {
-  const token = req.cookies && req.cookies.token;
+  // Support both cookie (same-domain) and Authorization header (cross-domain)
+  let token = req.cookies && req.cookies.token;
+
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized. Please log in.' });
   }

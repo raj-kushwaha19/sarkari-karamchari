@@ -18,21 +18,26 @@ router.get('/google/callback',
       const payload = { id: req.user._id, email: req.user.email, role: req.user.role };
       const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+      const isProd = process.env.NODE_ENV === 'production';
+
+      // Set cookie (works for same-domain; cross-domain fallback via URL token)
       res.cookie('token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax', // 'none' required for cross-domain (Render→Vercel)
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
       logger.info(`[Auth] User logged in: ${req.user.email}`);
-      res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+      // Pass token in URL so frontend can store it (cross-domain cookie may be blocked)
+      res.redirect(`${process.env.FRONTEND_URL}/dashboard?token=${token}`);
     } catch (err) {
       logger.error('[Auth] JWT generation failed:', err);
       res.redirect(`${process.env.FRONTEND_URL}/?error=server_error`);
     }
   }
 );
+
 
 // Get current user
 router.get('/me', verifyJWT, async (req, res) => {
