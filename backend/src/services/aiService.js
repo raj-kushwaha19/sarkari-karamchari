@@ -142,7 +142,7 @@ Identify the exact local government department or authority responsible for fixi
 If you are 100% certain of the exact official government complaint email address for this department in this specific pincode/state, provide it. Otherwise, generate a highly targeted web search query to find their official complaint email address.
 
 Respond ONLY in valid JSON with these keys:
-- departmentName: string (Exact authority name, e.g., Department of Electricity, Municipal Water Board, etc.)
+- departmentName: string (Exact authority name in standard English ONLY, e.g., "Electricity Department", "Municipal Water Board", "Traffic Police". DO NOT use literal Hindi translations or hallucinate words like "Bijli Vitamin" for "Bijli Vibhag")
 - category: string (Must be exactly one of: electricity, water, roads, sanitation, police, streetlight, telecom, aadhaar, ration, foodsafety, traffic, general)
 - officialEmail: string or null (The exact verified email address if you know it, otherwise null)
 - searchQuery: string (A precise search query containing the department name, the words "official email address", and the pincode)

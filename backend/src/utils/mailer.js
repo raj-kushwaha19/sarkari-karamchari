@@ -4,7 +4,9 @@ const User = require('../models/User');
 
 // Platform central transporter (used as fallback)
 const centralTransporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 465, // Explicitly use 465 (Secure) as port 587 is often blocked by Render
+  secure: true,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_APP_PASSWORD,
