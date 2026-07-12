@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@types/dompurify": "^3.0.5",
+    "@vercel/analytics": "^2.0.1",
     "axios": "^1.7.2",
     "dompurify": "^3.1.5",
     "framer-motion": "^11.2.12",
